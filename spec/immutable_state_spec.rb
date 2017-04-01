@@ -25,26 +25,15 @@ RSpec.describe ImmutableState do
     }
   end
 
-  let(:check_lambda_result) { :blablabla }
-
-  let(:check_lambda) do
-    check_lambda_result = self.check_lambda_result # shamanism =)
-
-    ->(_) { check_lambda_result }
-  end
-
   let(:klass) do
     # 2 strings of shamanism
     state_config  = self.state_config
     default_state = self.default_state
-    check_lambda  = self.check_lambda
 
     Class.new do
       include ImmutableState
 
       immutable_state state_config
-
-      consistency_check(&check_lambda)
 
       @default_state = default_state # another shaman string
 
@@ -78,32 +67,6 @@ RSpec.describe ImmutableState do
       subject { klass }
 
       it { is_expected_to_eq state_config }
-    end
-  end
-
-  describe '.consistency_check_lambda & #consistency_check_lambda' do
-    def expect_lambda_result_to_eq(value)
-      klass    = subject
-      instance = subject.new
-
-      expect(klass.consistency_check_lambda.call([])).to    eq value
-      expect(instance.consistency_check_lambda.call([])).to eq value
-    end
-
-    context 'when no lambda provided' do
-      subject { klass_without_config }
-
-      it 'returns default lambda which returns nil' do
-        expect_lambda_result_to_eq nil
-      end
-    end
-
-    context 'when simple config provided (xy-point)' do
-      subject { klass }
-
-      it 'returns lambda provided by config' do
-        expect_lambda_result_to_eq check_lambda_result
-      end
     end
   end
 
@@ -151,18 +114,6 @@ RSpec.describe ImmutableState do
     end
   end
 
-  describe '.consistency_check' do
-    context 'with correct argument' do
-      it { expect { instance }.to_not raise_error }
-    end
-
-    context 'with non-proc argument' do
-      let(:check_lambda) { 123 }
-
-      it { expect { instance }.to raise_error TypeError }
-    end
-  end
-
   describe '#state_from_hash (private)' do
     subject { instance }
 
@@ -200,16 +151,6 @@ RSpec.describe ImmutableState do
       end
 
       it { expect { subject }.to raise_error ImmutableState::Error::InvalidValue }
-    end
-
-    context 'when inconsistent data' do
-      let(:check_lambda) do
-        lambda do |errors|
-          errors << 'Invalid x + y sum' if x + y != 10
-        end
-      end
-
-      it { expect { instance }.to raise_error ImmutableState::Error::InconsistentState }
     end
   end
 end
