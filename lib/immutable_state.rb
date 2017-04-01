@@ -21,7 +21,7 @@ module ImmutableState
       class_variable_get CONFIG_CLASS_VARIABLE
     end
 
-    Contract C::HashOf[Symbol => Class] => :ok
+    Contract C::HashOf[Symbol => C::Any] => :ok
     def immutable_state(config)
       class_variable_set CONFIG_CLASS_VARIABLE, config
 
@@ -80,10 +80,7 @@ module ImmutableState
           var_name = "@#{key}".to_sym
           value    = state.instance_variable_get var_name
 
-          case contract
-          when Class then Util.class_check(value, contract)
-          else raise Error::InvalidContract, "Invalid contract for #{key}: #{contract}"
-          end
+          raise Error::InvalidValue, "Invalid contract for #{key}: #{contract}" unless Contract.valid?(value, contract)
         end
       end
 
@@ -94,11 +91,6 @@ module ImmutableState
         state.instance_exec(errors, &lambda)
 
         raise Error::InconsistentState if errors.any?
-      end
-
-      def class_check(value, contract)
-        check_passed = value.is_a?(contract)
-        raise Error::InvalidValue unless check_passed
       end
     end
   end

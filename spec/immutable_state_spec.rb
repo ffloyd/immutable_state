@@ -115,6 +115,30 @@ RSpec.describe ImmutableState do
       end
     end
 
+    context 'with config based on contracts' do
+      let(:state_config) do
+        {
+          x: Contracts::Pos,
+          y: Contracts::Pos
+        }
+      end
+
+      it 'positive value checking scenario works' do
+        expect { instance }.to_not raise_error
+      end
+
+      context 'and invalid values' do
+        let(:default_state) do
+          {
+            x: -1,
+            y: -2
+          }
+        end
+
+        it { expect { instance }.to raise_error ImmutableState::Error::InvalidValue }
+      end
+    end
+
     context 'with invalid config key type' do
       let(:state_config) do
         {
