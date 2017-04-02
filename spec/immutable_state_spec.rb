@@ -52,9 +52,7 @@ RSpec.describe ImmutableState do
     end
   end
 
-  let(:instance) do
-    klass.new
-  end
+  let(:instance) { klass.new }
 
   describe '.immutable_state_config & #immutable_state_config' do
     def is_expected_to_eq(value)
@@ -168,6 +166,14 @@ RSpec.describe ImmutableState do
       end
 
       it { expect { subject }.to raise_error ImmutableState::Error::InvariantBroken }
+    end
+  end
+
+  describe '#to_h' do
+    subject { instance.to_h }
+
+    it 'returns hash with values' do
+      is_expected.to eq(x: 1, y: 2)
     end
   end
 

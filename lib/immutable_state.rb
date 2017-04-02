@@ -59,6 +59,16 @@ module ImmutableState
       self.class.immutable_state_invariants
     end
 
+    def to_h
+      Hash[
+        immutable_state_config.map do |field, _contract|
+          var_name = "@#{field}".to_sym
+
+          [field, instance_variable_get(var_name)]
+        end
+      ]
+    end
+
     private
 
     def state_from_hash(hash)
