@@ -2,7 +2,8 @@ require "immutable_state/version"
 require "contracts"
 
 module ImmutableState
-  CONFIG_CLASS_VARIABLE = :@@immutable_state_config
+  CONFIG_CLASS_VARIABLE     = :@@immutable_state_config
+  INVARIANTS_CLASS_VARIABLE = :@@immutable_state_invariants
 
   module Error
     class Base < StandardError; end
@@ -18,6 +19,7 @@ module ImmutableState
     include Contracts::Core
     C = Contracts
 
+    Contract C::HashOf[Symbol => C::Any]
     def immutable_state_config
       class_variable_get CONFIG_CLASS_VARIABLE
     end
@@ -31,14 +33,30 @@ module ImmutableState
       end
       :ok
     end
+
+    def immutable_state_invariants
+      class_variable_get INVARIANTS_CLASS_VARIABLE
+    end
+
+    def state_invariant(name, &block)
+      state_invariants       = class_variable_get INVARIANTS_CLASS_VARIABLE
+      state_invariants[name] = block
+
+      :ok
+    end
   end
 
   module InstanceMethods
     include Contracts::Core
     C = Contracts
 
+    Contract C::HashOf[Symbol => C::Any]
     def immutable_state_config
       self.class.immutable_state_config
+    end
+
+    def immutable_state_invariants
+      self.class.immutable_state_invariants
     end
 
     private
@@ -55,12 +73,17 @@ module ImmutableState
         instance_variable_set var_name, value
       end
 
-      Util.value_checking       self
+      Util.value_checking      self
+      Util.invariants_checking self
     end
   end
 
   module Util
     class << self
+      include Contracts::Core
+      C = Contracts
+
+      Contract ImmutableState => :ok
       def value_checking(state)
         state.immutable_state_config.each do |key, contract|
           var_name = "@#{key}".to_sym
@@ -68,12 +91,26 @@ module ImmutableState
 
           raise Error::InvalidValue, "Invalid contract for #{key}: #{contract}" unless Contract.valid?(value, contract)
         end
+
+        :ok
+      end
+
+      Contract ImmutableState => :ok
+      def invariants_checking(state)
+        state.immutable_state_invariants.each do |name, invariant|
+          result = state.instance_exec(&invariant)
+
+          raise Error::InvariantBroken, "Invariant #{name} broken." unless result
+        end
+
+        :ok
       end
     end
   end
 
   def self.included(mod)
-    mod.class_variable_set CONFIG_CLASS_VARIABLE, {}
+    mod.class_variable_set CONFIG_CLASS_VARIABLE,     {}
+    mod.class_variable_set INVARIANTS_CLASS_VARIABLE, {}
 
     mod.extend  ::ImmutableState::ClassMethods
     mod.include ::ImmutableState::InstanceMethods

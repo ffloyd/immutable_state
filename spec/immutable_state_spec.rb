@@ -25,15 +25,23 @@ RSpec.describe ImmutableState do
     }
   end
 
+  let(:invariant_1) { -> { true } }
+  let(:invariant_2) { -> { true } }
+
   let(:klass) do
-    # 2 strings of shamanism
+    # 4 strings of shamanism
     state_config  = self.state_config
     default_state = self.default_state
+    invariant_1   = self.invariant_1
+    invariant_2   = self.invariant_2
 
     Class.new do
       include ImmutableState
 
       immutable_state state_config
+
+      state_invariant 'invariant_1', &invariant_1
+      state_invariant 'invariant_2', &invariant_2
 
       @default_state = default_state # another shaman string
 
@@ -114,6 +122,55 @@ RSpec.describe ImmutableState do
     end
   end
 
+  describe '.immutable_state_invariants & #immutable_state_invariants' do
+    def is_expected_to_eq(value)
+      klass    = subject
+      instance = subject.new
+
+      expect(klass.immutable_state_invariants).to    eq value
+      expect(instance.immutable_state_invariants).to eq value
+    end
+
+    context 'when no config provided' do
+      subject { klass_without_config }
+
+      it { is_expected_to_eq({}) }
+    end
+
+    context 'when simple config provided (xy-point)' do
+      subject { klass }
+
+      it 'returns values provide by config' do
+        is_expected_to_eq(
+          'invariant_1' => invariant_1,
+          'invariant_2' => invariant_2
+        )
+      end
+    end
+  end
+
+  describe '.state_invariant' do
+    let(:invariant_1) { -> { x + y == 3 } }
+    let(:invariant_2) { -> { x - y == -1 } }
+
+    subject { instance }
+
+    context 'with satisfied invariants' do
+      it { expect { subject }.to_not raise_error }
+    end
+
+    context 'with broken invariants' do
+      let(:default_state) do
+        {
+          x: 0,
+          y: 0
+        }
+      end
+
+      it { expect { subject }.to raise_error ImmutableState::Error::InvariantBroken }
+    end
+  end
+
   describe '#state_from_hash (private)' do
     subject { instance }
 
@@ -151,6 +208,12 @@ RSpec.describe ImmutableState do
       end
 
       it { expect { subject }.to raise_error ImmutableState::Error::InvalidValue }
+    end
+
+    context 'when invariant broken' do
+      let(:invariant_1) { -> { x + y == 100 } }
+
+      it { expect { subject }.to raise_error ImmutableState::Error::InvariantBroken }
     end
   end
 end
