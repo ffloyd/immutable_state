@@ -5,10 +5,13 @@ module ImmutableState
   CONFIG_CLASS_VARIABLE = :@@immutable_state_config
 
   module Error
-    class InvalidConfig         < StandardError; end
-    class InvalidInitialization < StandardError; end
-    class InvalidContract       < StandardError; end
-    class InvalidValue          < StandardError; end
+    class Base < StandardError; end
+
+    class InvalidConfig         < Base; end
+    class InvalidInitialization < Base; end
+    class InvalidContract       < Base; end
+    class InvalidValue          < Base; end
+    class InvariantBroken       < Base; end
   end
 
   module ClassMethods
