@@ -45,9 +45,16 @@ RSpec.describe ImmutableState do
 
       @default_state = default_state # another shaman string
 
-      def initialize
-        hash = self.class.instance_variable_get :@default_state # last accord of shamanism
+      def initialize(hash = nil)
+        hash ||= self.class.instance_variable_get :@default_state # last accord of shamanism
         state_from_hash hash
+      end
+
+      def move(d_x, d_y)
+        next_state do |ns|
+          ns[:x] = x + d_x
+          ns[:y] = y + d_y
+        end
       end
     end
   end
@@ -220,6 +227,18 @@ RSpec.describe ImmutableState do
       let(:invariant_1) { -> { x + y == 100 } }
 
       it { expect { subject }.to raise_error ImmutableState::Error::InvariantBroken }
+    end
+  end
+
+  describe '#next_state (private)' do
+    subject { instance.move(1, 2) }
+
+    it 'creates state with updated values' do
+      expect(subject.to_h).to eq(x: 2, y: 4)
+    end
+
+    it 'left previous state untouched' do
+      expect { subject }.to_not change { instance.to_h }
     end
   end
 end

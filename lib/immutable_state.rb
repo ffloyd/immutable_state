@@ -59,6 +59,7 @@ module ImmutableState
       self.class.immutable_state_invariants
     end
 
+    Contract C::HashOf[Symbol => C::Any]
     def to_h
       Hash[
         immutable_state_config.map do |field, _contract|
@@ -85,6 +86,14 @@ module ImmutableState
 
       Util.value_checking      self
       Util.invariants_checking self
+    end
+
+    def next_state(&block)
+      ns = to_h
+
+      block.call(ns)
+
+      self.class.new(ns)
     end
   end
 
