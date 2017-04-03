@@ -8,7 +8,7 @@ module ImmutableState
   CONFIG_CLASS_VARIABLE     = :@@immutable_state_config
   INVARIANTS_CLASS_VARIABLE = :@@immutable_state_invariants
 
-  module Error
+  module Errors
     class Base < StandardError; end
 
     class DuplicateConfig       < Base; end
@@ -34,7 +34,7 @@ module ImmutableState
 
     Contract C::HashOf[Symbol => C::Any] => :ok
     def immutable_state(config)
-      raise Error::DuplicateConfig unless immutable_state_config.empty?
+      raise Errors::DuplicateConfig unless immutable_state_config.empty?
 
       class_variable_set CONFIG_CLASS_VARIABLE, config
 
@@ -50,11 +50,11 @@ module ImmutableState
     end
 
     def state_invariant(name, &block)
-      raise Error::InvalidInvariant unless block.is_a? Proc
-      raise Error::InvalidInvariant unless name.is_a?(String) && !name.empty?
+      raise Errors::InvalidInvariant unless block.is_a? Proc
+      raise Errors::InvalidInvariant unless name.is_a?(String) && !name.empty?
 
       state_invariants = class_variable_get INVARIANTS_CLASS_VARIABLE
-      raise Error::DuplicateInvariant if state_invariants.keys.include? name
+      raise Errors::DuplicateInvariant if state_invariants.keys.include? name
 
       state_invariants[name] = block
 
@@ -93,7 +93,7 @@ module ImmutableState
       invalid_keys = hash.keys - immutable_state_config.keys
 
       if invalid_keys.any?
-        raise Error::InvalidInitialization,
+        raise Errors::InvalidInitialization,
               "There are unexpected entries in initialization hash: #{invalid_keys.join(', ')}"
       end
 
@@ -126,7 +126,7 @@ module ImmutableState
           var_name = "@#{key}".to_sym
           value    = state.instance_variable_get var_name
 
-          raise Error::InvalidValue, "Invalid contract for #{key}: #{contract}" unless Contract.valid?(value, contract)
+          raise Errors::InvalidValue, "Invalid contract for #{key}: #{contract}" unless Contract.valid?(value, contract)
         end
 
         :ok
@@ -137,7 +137,7 @@ module ImmutableState
         state.immutable_state_invariants.each do |name, invariant|
           result = state.instance_exec(&invariant)
 
-          raise Error::InvariantBroken, "Invariant #{name} broken." unless result
+          raise Errors::InvariantBroken, "Invariant #{name} broken." unless result
         end
 
         :ok

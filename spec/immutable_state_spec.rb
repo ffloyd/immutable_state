@@ -137,7 +137,7 @@ RSpec.describe ImmutableState do
     context 'when config already defined' do
       include_context 'xy-point state'
 
-      it { expect { apply_config }.to raise_error ImmutableState::Error::DuplicateConfig }
+      it { expect { apply_config }.to raise_error ImmutableState::Errors::DuplicateConfig }
     end
   end
 
@@ -174,7 +174,7 @@ RSpec.describe ImmutableState do
       include_context 'xy-point state'
 
       it 'raises InvalidInvariant error' do
-        expect { add_invariant }.to raise_error ImmutableState::Error::InvalidInvariant
+        expect { add_invariant }.to raise_error ImmutableState::Errors::InvalidInvariant
       end
     end
 
@@ -184,7 +184,7 @@ RSpec.describe ImmutableState do
       let(:name) { :unexpected_symbol }
 
       it 'raises InvalidInvariant error' do
-        expect { add_invariant }.to raise_error ImmutableState::Error::InvalidInvariant
+        expect { add_invariant }.to raise_error ImmutableState::Errors::InvalidInvariant
       end
     end
 
@@ -194,7 +194,7 @@ RSpec.describe ImmutableState do
       let(:name) { klass.immutable_state_invariants.keys.first }
 
       it 'raises DuplicateInvariant error' do
-        expect { add_invariant }.to raise_error ImmutableState::Error::DuplicateInvariant
+        expect { add_invariant }.to raise_error ImmutableState::Errors::DuplicateInvariant
       end
     end
   end
@@ -239,7 +239,7 @@ RSpec.describe ImmutableState do
       end
 
       it 'raises InvalidValue error' do
-        expect { call_via_new }.to raise_error ImmutableState::Error::InvalidValue
+        expect { call_via_new }.to raise_error ImmutableState::Errors::InvalidValue
       end
     end
 
@@ -251,7 +251,7 @@ RSpec.describe ImmutableState do
       end
 
       it 'raises InvariantBroken error' do
-        expect { call_via_new }.to raise_error ImmutableState::Error::InvariantBroken
+        expect { call_via_new }.to raise_error ImmutableState::Errors::InvariantBroken
       end
     end
   end
@@ -300,7 +300,7 @@ RSpec.describe ImmutableState do
       end
 
       it 'raises InvalidValue error' do
-        expect { call_via_send }.to raise_error ImmutableState::Error::InvalidValue
+        expect { call_via_send }.to raise_error ImmutableState::Errors::InvalidValue
       end
     end
 
@@ -314,7 +314,7 @@ RSpec.describe ImmutableState do
       end
 
       it 'raises InvalidInitialization error' do
-        expect { call_via_send }.to raise_error ImmutableState::Error::InvalidInitialization
+        expect { call_via_send }.to raise_error ImmutableState::Errors::InvalidInitialization
       end
     end
 
@@ -328,7 +328,7 @@ RSpec.describe ImmutableState do
       end
 
       it 'raises InvariantBroken error' do
-        expect { call_via_send }.to raise_error ImmutableState::Error::InvariantBroken
+        expect { call_via_send }.to raise_error ImmutableState::Errors::InvariantBroken
       end
     end
   end
