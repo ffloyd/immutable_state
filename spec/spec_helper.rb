@@ -1,6 +1,10 @@
 # frozen_string_literal: true
 
 require 'bundler/setup'
+require 'simplecov'
+
+SimpleCov.start
+
 require 'immutable_state'
 
 RSpec.configure do |config|
