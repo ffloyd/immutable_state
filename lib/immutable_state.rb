@@ -1,6 +1,9 @@
-require "immutable_state/version"
-require "contracts"
+# frozen_string_literal: true
 
+require 'immutable_state/version'
+require 'contracts'
+
+# Immutable data structure with typed fields and invariants.
 module ImmutableState
   CONFIG_CLASS_VARIABLE     = :@@immutable_state_config
   INVARIANTS_CLASS_VARIABLE = :@@immutable_state_invariants
@@ -8,13 +11,18 @@ module ImmutableState
   module Error
     class Base < StandardError; end
 
-    class InvalidConfig         < Base; end
-    class InvalidInitialization < Base; end
-    class InvalidContract       < Base; end
+    class DuplicateConfig       < Base; end
+    class InvalidInvariant      < Base; end
+    class DuplicateInvariant    < Base; end
     class InvalidValue          < Base; end
     class InvariantBroken       < Base; end
+    class InvalidInitialization < Base; end
+
+    class InvalidConfig         < Base; end
+    class InvalidContract       < Base; end
   end
 
+  # Class-level methods of ImmutableState
   module ClassMethods
     include Contracts::Core
     C = Contracts
@@ -26,11 +34,14 @@ module ImmutableState
 
     Contract C::HashOf[Symbol => C::Any] => :ok
     def immutable_state(config)
+      raise Error::DuplicateConfig unless immutable_state_config.empty?
+
       class_variable_set CONFIG_CLASS_VARIABLE, config
 
       config.keys.each do |key|
         attr_reader key
       end
+
       :ok
     end
 
@@ -39,13 +50,19 @@ module ImmutableState
     end
 
     def state_invariant(name, &block)
-      state_invariants       = class_variable_get INVARIANTS_CLASS_VARIABLE
+      raise Error::InvalidInvariant unless block.is_a? Proc
+      raise Error::InvalidInvariant unless name.is_a?(String) && !name.empty?
+
+      state_invariants = class_variable_get INVARIANTS_CLASS_VARIABLE
+      raise Error::DuplicateInvariant if state_invariants.keys.include? name
+
       state_invariants[name] = block
 
       :ok
     end
   end
 
+  # Instance-level methods of ImmutableState
   module InstanceMethods
     include Contracts::Core
     C = Contracts
@@ -75,28 +92,29 @@ module ImmutableState
     def state_from_hash(hash)
       invalid_keys = hash.keys - immutable_state_config.keys
 
-      raise Error::InvalidInitialization,
-            "There are unexpected entries in initialization hash: #{invalid_keys.join(', ')}" if invalid_keys.any?
+      if invalid_keys.any?
+        raise Error::InvalidInitialization,
+              "There are unexpected entries in initialization hash: #{invalid_keys.join(', ')}"
+      end
 
       hash.each do |key, value|
-        var_name = "@#{key}".to_sym
-
-        instance_variable_set var_name, value
+        instance_variable_set "@#{key}".to_sym, value
       end
 
       Util.value_checking      self
       Util.invariants_checking self
     end
 
-    def next_state(&block)
+    def next_state
       ns = to_h
 
-      block.call(ns)
+      yield(ns)
 
       self.class.new(ns)
     end
   end
 
+  # Utility methods for ImmutableState.
   module Util
     class << self
       include Contracts::Core

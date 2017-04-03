@@ -1,0 +1,13 @@
+require: rubocop-rspec
+
+AllCops:
+  TargetRubyVersion: 2.4
+  DisplayCopNames: true
+  DisplayStyleGuide: true
+
+Metrics/LineLength:
+  Max: 120
+
+Metrics/BlockLength:
+  Exclude:
+    - 'spec/**/*'
