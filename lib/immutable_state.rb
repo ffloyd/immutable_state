@@ -17,9 +17,6 @@ module ImmutableState
     class InvalidValue          < Base; end
     class InvariantBroken       < Base; end
     class InvalidInitialization < Base; end
-
-    class InvalidConfig         < Base; end
-    class InvalidContract       < Base; end
   end
 
   # Class-level methods of ImmutableState
